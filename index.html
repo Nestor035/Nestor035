@@ -5,67 +5,82 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ask Me Anything</title>
   <style>
-    body { font-family: Arial; background: #121212; color: #fff; text-align: center; padding: 20px; }
-    input, textarea, button { padding: 10px; margin: 10px; border-radius: 10px; border: none; width: 80%; max-width: 400px; }
-    .admin { display: none; margin-top: 40px; }
+    body { font-family: Arial, sans-serif; text-align: center; background: #111; color: #fff; padding: 20px; }
+    input, textarea, button { margin: 10px; padding: 10px; border-radius: 8px; border: none; }
+    button { background-color: #00b894; color: white; font-weight: bold; cursor: pointer; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
+  <h2>Send Anonymous Message</h2>
+  <input type="text" id="username" placeholder="Enter your name (optional)"/><br/>
+  <textarea id="message" rows="4" placeholder="Enter your message"></textarea><br/>
+  <button onclick="sendMessage()">Send</button>
 
-  <h1>Ask Me Anything</h1>
+  <h3>🔒 Admin Login</h3>
+  <input type="password" id="adminPass" placeholder="Enter admin password"/>
+  <button onclick="checkPassword()">View Messages</button>
 
-  <input id="username" placeholder="Your name (optional)" />
-  <br>
-  <textarea id="message" placeholder="Type your anonymous message"></textarea>
-  <br>
-  <button onclick="sendMessage()">Send Message</button>
-
-  <p id="status"></p>
-
-  <br><hr><br>
-
-  <button onclick="login()">🔐 Admin Login</button>
-
-  <div id="admin" class="admin">
-    <h2>✅ You're logged in!</h2>
-    <p>Open your Google Sheet to see the messages:</p>
-    <a href="https://docs.google.com/spreadsheets/d/1tYIrIVd2FXkM6_Qd1tmwZ-dPA079qEkNYcam87tmUIY/edit?usp=drivesdk" target="_blank" style="color: #4fc3f7;">📄 View Messages Sheet</a>
+  <div id="adminView" class="hidden">
+    <h3>📥 Received Messages</h3>
+    <div id="messagesList"></div>
   </div>
 
   <script>
-    function sendMessage() {
+    const SHEET_URL = "https://api.sheetbest.com/sheets/2ec1f612-6c88-43f4-8c65-05a9334cb233";
+    const ADMIN_PASSWORD = "69475";
+
+    async function sendMessage() {
       const username = document.getElementById("username").value || "Anonymous";
-      const message = document.getElementById("message").value.trim();
+      const message = document.getElementById("message").value;
+      if (!message.trim()) return alert("Please type a message.");
 
-      if (!message) {
-        alert("Please enter a message.");
-        return;
+      try {
+        const res = await fetch(SHEET_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, message, time: new Date().toLocaleString() }),
+        });
+
+        if (res.ok) {
+          alert("Message sent anonymously ✅");
+          document.getElementById("username").value = "";
+          document.getElementById("message").value = "";
+        } else {
+          alert("Failed to send. Try again.");
+        }
+      } catch (error) {
+        alert("Network error.");
+        console.error(error);
       }
-
-      fetch("https://api.sheetbest.com/sheets/2ec1f612-6c88-43f4-8c65-05a9334cb233", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ Username: username, Message: message })
-      })
-      .then(res => {
-        document.getElementById("status").innerText = "✅ Message sent!";
-        document.getElementById("username").value = "";
-        document.getElementById("message").value = "";
-      })
-      .catch(err => {
-        document.getElementById("status").innerText = "❌ Failed to send message.";
-      });
     }
 
-    function login() {
-      const pwd = prompt("Enter admin password:");
-      if (pwd === "69475") {
-        document.getElementById("admin").style.display = "block";
+    function checkPassword() {
+      const entered = document.getElementById("adminPass").value;
+      if (entered === ADMIN_PASSWORD) {
+        loadMessages();
+        document.getElementById("adminView").classList.remove("hidden");
       } else {
-        alert("❌ Incorrect password.");
+        alert("Wrong password");
+      }
+    }
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(SHEET_URL);
+        const data = await res.json();
+        const container = document.getElementById("messagesList");
+        container.innerHTML = "";
+
+        data.reverse().forEach(entry => {
+          const item = document.createElement("div");
+          item.innerHTML = `<strong>${entry.username}:</strong> ${entry.message} <small>(${entry.time})</small><hr>`;
+          container.appendChild(item);
+        });
+      } catch (error) {
+        alert("Failed to load messages");
       }
     }
   </script>
-
 </body>
 </html>
