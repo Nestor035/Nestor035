@@ -6,7 +6,7 @@
   <title>Ask Me Anything</title>
   <style>
     body { font-family: Arial; background: #121212; color: #fff; text-align: center; padding: 20px; }
-    input, textarea, button { padding: 10px; margin: 10px; border-radius: 10px; border: none; }
+    input, textarea, button { padding: 10px; margin: 10px; border-radius: 10px; border: none; width: 80%; max-width: 400px; }
     .admin { display: none; margin-top: 40px; }
   </style>
 </head>
@@ -15,33 +15,36 @@
   <h1>Ask Me Anything</h1>
 
   <input id="username" placeholder="Your name (optional)" />
+  <br>
   <textarea id="message" placeholder="Type your anonymous message"></textarea>
+  <br>
   <button onclick="sendMessage()">Send Message</button>
 
   <p id="status"></p>
 
+  <br><hr><br>
+
   <button onclick="login()">🔐 Admin Login</button>
 
   <div id="admin" class="admin">
-    <h2>📬 Received Messages</h2>
-    <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTYWr9kLNfyzPoNP9wTDRUxIuAWrR-dFGRlE5p0_3re7ILObvj3Od3zkK3AcUVaHjD3kXJtu1KpDE7G/pubhtml?widget=true&amp;headers=false" width="100%" height="400"></iframe>
+    <h2>✅ You're logged in!</h2>
+    <p>Open your Google Sheet to see the messages:</p>
+    <a href="https://docs.google.com/spreadsheets/d/1tYIrIVd2FXkM6_Qd1tmwZ-dPA079qEkNYcam87tmUIY/edit?usp=drivesdk" target="_blank" style="color: #4fc3f7;">📄 View Messages Sheet</a>
   </div>
 
   <script>
     function sendMessage() {
       const username = document.getElementById("username").value || "Anonymous";
-      const message = document.getElementById("message").value;
+      const message = document.getElementById("message").value.trim();
 
-      if (!message.trim()) {
+      if (!message) {
         alert("Please enter a message.");
         return;
       }
 
       fetch("https://api.sheetbest.com/sheets/2ec1f612-6c88-43f4-8c65-05a9334cb233", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Username: username, Message: message })
       })
       .then(res => {
@@ -59,9 +62,10 @@
       if (pwd === "69475") {
         document.getElementById("admin").style.display = "block";
       } else {
-        alert("Incorrect password.");
+        alert("❌ Incorrect password.");
       }
     }
   </script>
+
 </body>
 </html>
