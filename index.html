@@ -1,109 +1,168 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Anothought - Send an anonymous message</title>
-<style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #ff5e62, #ff9966);
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    margin: 0;
-  }
-  .container {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 0 20px rgba(0,0,0,0.2);
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
-  }
-  input, textarea, button {
-    width: 100%;
-    margin-top: 1rem;
-    padding: 0.8rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-  }
-  input, textarea {
-    background: #fff;
-    color: #333;
-  }
-  button {
-    background: #1eb980;
-    color: #fff;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  button:hover {
-    background: #17a871;
-  }
-  h1 {
-    margin-bottom: 1rem;
-    font-size: 2rem;
-  }
-  #thankYouMessage {
-    display: none;
-    font-size: 1.2rem;
-    color: #fff;
-    margin-top: 1rem;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Anothought - Send an anonymous message</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #ff5e62, #ff9966);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid white;
+      width: 27ch;
+      animation: typing 3s steps(27, end) forwards, blink 0.7s step-end infinite;
+    }
+    @keyframes typing { to { width: 27ch; } }
+    @keyframes blink { 50% { border-color: transparent; } }
+
+    input, textarea, button {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+    }
+    input, textarea {
+      background: #fff;
+      color: #333;
+    }
+    button {
+      background: #1eb980;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #17a871;
+    }
+    #thankYouMessage {
+      display: none;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+    }
+    #adminLogin, #adminPanel {
+      margin-top: 2rem;
+    }
+    #adminPanel ul {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #adminPanel li {
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+  </style>
 </head>
 <body>
-  <div class="container" id="formContainer">
+  <div class="container">
     <h1>Send an anonymous message</h1>
-    <form id="messageForm" method="POST" onsubmit="return handleSubmit(event)">
+
+    <form id="messageForm" onsubmit="return handleSubmit(event)">
       <input type="text" name="username" placeholder="Your username" required autocomplete="off" />
       <textarea name="message" rows="4" placeholder="Your message..." required></textarea>
-      <input type="hidden" name="_captcha" value="false" />
       <button type="submit">Send</button>
     </form>
-    <div id="thankYouMessage">✅ Your message has been sent! Returning to the form...</div>
-  </div>  <script>
+
+    <div id="thankYouMessage">✅ Your message has been sent!</div>
+
+    <!-- Admin Login -->
+    <div id="adminLogin">
+      <input type="password" id="adminPass" placeholder="Admin PIN" />
+      <button onclick="checkAdminPass()">🔓 View Messages</button>
+    </div>
+
+    <!-- Admin Message Viewer -->
+    <div id="adminPanel" style="display:none;">
+      <h2>📥 Received Messages</h2>
+      <ul id="messageList"></ul>
+    </div>
+  </div>
+
+  <audio id="successSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
+
+  <script>
+    const ADMIN_PASSWORD = "69475";
+    const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/2ec1f612-6c88-43f4-8c65-05a9334cb233";
+
     async function handleSubmit(event) {
       event.preventDefault();
-
       const form = event.target;
       const username = form.username.value.trim();
       const message = form.message.value.trim();
 
       if (!username || !message) {
-        alert('Please enter both username and message.');
+        alert("Please enter both username and message.");
         return;
       }
 
-      const data = new FormData(form);
-
       try {
-        const response = await fetch('https://formsubmit.co/ajax/694752084an@gmail.com', {
-          method: 'POST',
-          body: data,
-          headers: { 'Accept': 'application/json' }
+        const response = await fetch(SHEET_BEST_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, message })
         });
 
         if (response.ok) {
-          form.style.display = 'none';
-          document.getElementById('thankYouMessage').style.display = 'block';
-          form.reset();
+          form.style.display = "none";
+          document.getElementById("thankYouMessage").style.display = "block";
+          document.getElementById("successSound").play();
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-          // Reload the page after 3 seconds
-          setTimeout(() => {
-            location.reload();
-          }, 3000);
+          setTimeout(() => location.reload(), 3000);
         } else {
-          alert('Oops! There was a problem sending your message.');
+          alert("Failed to send message.");
         }
-      } catch (error) {
-        alert('Oops! There was a problem sending your message.');
+      } catch (err) {
+        alert("Error sending message.");
       }
     }
-  </script></body>
-</html>
+
+    function checkAdminPass() {
+      const input = document.getElementById("adminPass").value;
+      if (input === ADMIN_PASSWORD) {
+        document.getElementById("adminPanel").style.display = "block";
+        document.getElementById("adminLogin").style.display = "none";
+        loadMessages();
+      } else {
+        alert("❌ Incorrect PIN");
+      }
+    }
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(SHEET_BEST_URL);
+        const data = await res.json();
+        const list = document.getElementById("messageList");
+        list.innerHTML = "";
+        data.reverse().forEach(entry => {
+          const li = document.createElement("li");
+          li.innerHTML = `<strong>@${entry.username}</strong>: ${entry.message}`;
