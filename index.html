@@ -2,167 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Anothought - Send an anonymous message</title>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ask Me Anything</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #ff5e62, #ff9966);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
-    }
-    .container {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 1rem;
-      white-space: nowrap;
-      overflow: hidden;
-      border-right: 2px solid white;
-      width: 27ch;
-      animation: typing 3s steps(27, end) forwards, blink 0.7s step-end infinite;
-    }
-    @keyframes typing { to { width: 27ch; } }
-    @keyframes blink { 50% { border-color: transparent; } }
-
-    input, textarea, button {
-      width: 100%;
-      margin-top: 1rem;
-      padding: 0.8rem;
-      border: none;
-      border-radius: 0.5rem;
-      font-size: 1rem;
-    }
-    input, textarea {
-      background: #fff;
-      color: #333;
-    }
-    button {
-      background: #1eb980;
-      color: #fff;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #17a871;
-    }
-    #thankYouMessage {
-      display: none;
-      font-size: 1.1rem;
-      margin-top: 1rem;
-    }
-    #adminLogin, #adminPanel {
-      margin-top: 2rem;
-    }
-    #adminPanel ul {
-      list-style: none;
-      padding: 0;
-      text-align: left;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    #adminPanel li {
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-      color: #fff;
-    }
+    body { font-family: Arial; background: #121212; color: #fff; text-align: center; padding: 20px; }
+    input, textarea, button { padding: 10px; margin: 10px; border-radius: 10px; border: none; }
+    .admin { display: none; margin-top: 40px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Send an anonymous message</h1>
 
-    <form id="messageForm" onsubmit="return handleSubmit(event)">
-      <input type="text" name="username" placeholder="Your username" required autocomplete="off" />
-      <textarea name="message" rows="4" placeholder="Your message..." required></textarea>
-      <button type="submit">Send</button>
-    </form>
+  <h1>Ask Me Anything</h1>
 
-    <div id="thankYouMessage">✅ Your message has been sent!</div>
+  <input id="username" placeholder="Your name (optional)" />
+  <textarea id="message" placeholder="Type your anonymous message"></textarea>
+  <button onclick="sendMessage()">Send Message</button>
 
-    <!-- Admin Login -->
-    <div id="adminLogin">
-      <input type="password" id="adminPass" placeholder="Admin PIN" />
-      <button onclick="checkAdminPass()">🔓 View Messages</button>
-    </div>
+  <p id="status"></p>
 
-    <!-- Admin Message Viewer -->
-    <div id="adminPanel" style="display:none;">
-      <h2>📥 Received Messages</h2>
-      <ul id="messageList"></ul>
-    </div>
+  <button onclick="login()">🔐 Admin Login</button>
+
+  <div id="admin" class="admin">
+    <h2>📬 Received Messages</h2>
+    <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTYWr9kLNfyzPoNP9wTDRUxIuAWrR-dFGRlE5p0_3re7ILObvj3Od3zkK3AcUVaHjD3kXJtu1KpDE7G/pubhtml?widget=true&amp;headers=false" width="100%" height="400"></iframe>
   </div>
 
-  <audio id="successSound" src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" preload="auto"></audio>
-
   <script>
-    const ADMIN_PASSWORD = "69475";
-    const SHEET_BEST_URL = "https://api.sheetbest.com/sheets/2ec1f612-6c88-43f4-8c65-05a9334cb233";
+    function sendMessage() {
+      const username = document.getElementById("username").value || "Anonymous";
+      const message = document.getElementById("message").value;
 
-    async function handleSubmit(event) {
-      event.preventDefault();
-      const form = event.target;
-      const username = form.username.value.trim();
-      const message = form.message.value.trim();
-
-      if (!username || !message) {
-        alert("Please enter both username and message.");
+      if (!message.trim()) {
+        alert("Please enter a message.");
         return;
       }
 
-      try {
-        const response = await fetch(SHEET_BEST_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, message })
-        });
-
-        if (response.ok) {
-          form.style.display = "none";
-          document.getElementById("thankYouMessage").style.display = "block";
-          document.getElementById("successSound").play();
-          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-
-          setTimeout(() => location.reload(), 3000);
-        } else {
-          alert("Failed to send message.");
-        }
-      } catch (err) {
-        alert("Error sending message.");
-      }
+      fetch("https://api.sheetbest.com/sheets/2ec1f612-6c88-43f4-8c65-05a9334cb233", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ Username: username, Message: message })
+      })
+      .then(res => {
+        document.getElementById("status").innerText = "✅ Message sent!";
+        document.getElementById("username").value = "";
+        document.getElementById("message").value = "";
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = "❌ Failed to send message.";
+      });
     }
 
-    function checkAdminPass() {
-      const input = document.getElementById("adminPass").value;
-      if (input === ADMIN_PASSWORD) {
-        document.getElementById("adminPanel").style.display = "block";
-        document.getElementById("adminLogin").style.display = "none";
-        loadMessages();
+    function login() {
+      const pwd = prompt("Enter admin password:");
+      if (pwd === "69475") {
+        document.getElementById("admin").style.display = "block";
       } else {
-        alert("❌ Incorrect PIN");
+        alert("Incorrect password.");
       }
     }
-
-    async function loadMessages() {
-      try {
-        const res = await fetch(SHEET_BEST_URL);
-        const data = await res.json();
-        const list = document.getElementById("messageList");
-        list.innerHTML = "";
-        data.reverse().forEach(entry => {
-          const li = document.createElement("li");
-          li.innerHTML = `<strong>@${entry.username}</strong>: ${entry.message}`;
+  </script>
+</body>
+</html>
